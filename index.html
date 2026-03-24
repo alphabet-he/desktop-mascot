@@ -125,7 +125,6 @@
         let dialogue_startup = [];
         let dialogue_quit = [];
         let dialogue_idle = [];
-        let dialogue_response = [];
 
         const mascotImg = document.getElementById('mascot');
         const bubble = document.getElementById('bubble');
@@ -155,7 +154,6 @@
             dialogue_startup = config.dialogue_startup || dialogue_normal;
             dialogue_quit = config.dialogue_quit || ["Goodbye!"];
             dialogue_idle = config.dialogue_idle || dialogue_normal;
-            dialogue_response = config.dialogue_response || ["Heard you!"];
 
             const fullImgPath = path.join(rootDir, config.img_path);
             mascotImg.src = `file://${fullImgPath}`;
@@ -210,7 +208,7 @@
                     return;
                 }
                 ipcRenderer.send('user-input-saved', val);
-                showDialogueFromList(dialogue_response);
+                showDialogueFromList(dialogue_normal);
                 userInput.value = '';
                 userInput.blur();
                 resetIdleTimer();

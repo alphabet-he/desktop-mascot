@@ -245,11 +245,6 @@
             <textarea id="dialogue-quit"></textarea>
         </div>
 
-        <div class="form-group">
-            <label>Input Response Dialogues</label>
-            <textarea id="dialogue-response"></textarea>
-        </div>
-
         <div class="actions">
             <button id="save-btn">Save Changes</button>
             <span id="status">✓ Saved successfully!</span>
@@ -312,7 +307,6 @@
             document.getElementById('dialogue-normal').value = (configData.dialogue || []).join('\n');
             document.getElementById('dialogue-idle').value = (configData.dialogue_idle || []).join('\n');
             document.getElementById('dialogue-quit').value = (configData.dialogue_quit || []).join('\n');
-            document.getElementById('dialogue-response').value = (configData.dialogue_response || []).join('\n');
         }
 
         document.getElementById('save-btn').addEventListener('click', async () => {
@@ -324,7 +318,6 @@
             configData.dialogue = parseArray(document.getElementById('dialogue-normal').value);
             configData.dialogue_idle = parseArray(document.getElementById('dialogue-idle').value);
             configData.dialogue_quit = parseArray(document.getElementById('dialogue-quit').value);
-            configData.dialogue_response = parseArray(document.getElementById('dialogue-response').value);
 
             const result = await ipcRenderer.invoke('save-config', { confPath: currentConfigPath, confData: configData });
             
