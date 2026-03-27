@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="UTF-8">
     <title>Data Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.2/wordcloud2.min.js"></script>
     <style>
         html {
             background-color: #f6d365; /* Default background color */
@@ -16,10 +17,11 @@
             padding: 0;
             background-color: transparent;
             color: #333;
-            min-height: 100vh;
+            height: 100vh;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
         /* Frameless Title Bar */
@@ -57,14 +59,6 @@
             background: #ff5f57;
         }
 
-        #content {
-            padding: 20px;
-            flex-grow: 1;
-            overflow-y: auto;
-            position: relative;
-            z-index: 1;
-        }
-
         /* Centered Background Image */
         #bg-image-container {
             position: fixed;
@@ -78,61 +72,78 @@
 
         #bg-image {
             object-fit: contain;
-            opacity: 1; /* Changed to 1, manageable via config */
+            opacity: 1;
         }
 
-        /* Glass layer to ensure text readability */
         #glass-layer {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(12px);
             z-index: 0;
         }
 
-        h1 {
-            font-size: 28px;
-            color: #111;
-            margin-top: 0;
-            margin-bottom: 25px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
+        /* Main View Structure */
+        #app {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            z-index: 1;
+            position: relative;
+            padding: 20px;
+            gap: 15px;
+            height: calc(100vh - 72px);
         }
 
-        h2 {
-            font-size: 18px;
-            color: #222;
-            margin-top: 0;
-            margin-bottom: 15px;
+        /* Top Navigation */
+        #top-nav {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+            padding: 10px;
+            backdrop-filter: blur(16px);
+            flex-shrink: 0;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            padding: 10px 20px;
+            font-size: 15px;
+            font-family: 'Outfit', sans-serif;
             font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #444;
         }
 
-        .card {
-            background: rgba(255, 255, 255, 0.7);
-            padding: 24px;
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateY(-2px);
+        }
+
+        .nav-btn.active {
+            background: #fff;
+            color: #111;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        /* Content Area */
+        #main-content {
+            flex-grow: 1;
+            background: rgba(255, 255, 255, 0.6);
             border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            margin-bottom: 25px;
-            backdrop-filter: blur(12px);
-            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
-        }
-
-        ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            max-height: 250px;
+            backdrop-filter: blur(16px);
+            padding: 24px;
             overflow-y: auto;
-            padding-right: 8px;
+            position: relative;
         }
 
         /* Hide All Scrollbars Globally */
@@ -144,38 +155,134 @@
             scrollbar-width: none;
         }
 
-        li {
-            padding: 14px 18px;
+        h2 {
+            font-size: 24px;
+            color: #111;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards inside tabs */
+        .card {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            flex-shrink: 0;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        /* Word Cloud Container */
+        #wordcloud-container {
+            width: 100%;
+            height: 300px;
+            position: relative;
+        }
+
+        /* Controls Row */
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
             align-items: center;
             background: rgba(255, 255, 255, 0.5);
-            margin-bottom: 10px;
+            padding: 12px;
             border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        select, input[type="date"] {
+            font-family: 'Outfit', sans-serif;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(0,0,0,0.1);
+            background: rgba(255,255,255,0.9);
+            font-size: 14px;
+            color: #333;
+            outline: none;
+        }
+        
+        button.action-btn {
+            font-family: 'Outfit', sans-serif;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            background: #fff;
+            color: #111;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            cursor: pointer;
             transition: all 0.2s;
         }
 
-        li:hover {
-            background: rgba(255, 255, 255, 0.9);
-            transform: scale(1.02);
+        button.action-btn:hover {
+            background: #f0f0f0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
-        .text {
-            font-weight: 600;
+        /* Messages List */
+        .message-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .message-item {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            transition: transform 0.2s;
+        }
+
+        .message-item:hover {
+            transform: scale(1.01);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .msg-text {
             font-size: 15px;
+            font-weight: 600;
             color: #111;
         }
 
-        .time {
-            color: #555;
-            font-size: 11px;
-            font-weight: 700;
-            background: rgba(0, 0, 0, 0.06);
-            padding: 5px 10px;
-            border-radius: 20px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .msg-meta {
+            font-size: 12px;
+            color: #777;
+            font-weight: 400;
         }
     </style>
 </head>
@@ -190,17 +297,78 @@
     </div>
     <div id="glass-layer"></div>
 
-    <div id="content">
-        <h1>Dashboard</h1>
-
-        <div class="card">
-            <h2>Hourly Clicks</h2>
-            <ul id="clicks-list">Loading clicks...</ul>
+    <div id="app">
+        <!-- Top Navigation -->
+        <div id="top-nav">
+            <button class="nav-btn active" onclick="switchTab('home')">🏠 Homepage</button>
+            <button class="nav-btn" onclick="switchTab('stats')">📊 Statistics</button>
+            <button class="nav-btn" onclick="switchTab('messages')">💬 Messages</button>
         </div>
 
-        <div class="card">
-            <h2>User Inputs</h2>
-            <ul id="inputs-list">Loading inputs...</ul>
+        <!-- Main Content -->
+        <div id="main-content">
+            
+            <!-- HOME TAB -->
+            <div id="home-tab" class="tab-content active">
+                <h2>Overview Dashboard</h2>
+                <div class="card">
+                    <div class="card-title">Last 7 Days Activity</div>
+                    <canvas id="homeChart" height="80"></canvas>
+                </div>
+                <div class="card" style="flex-grow: 1;">
+                    <div class="card-title">What's on your mind? (Word Cloud)</div>
+                    <div id="wordcloud-container">
+                        <canvas id="wordcloud-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STATS TAB -->
+            <div id="stats-tab" class="tab-content">
+                <h2>Interaction Statistics</h2>
+                <div class="controls">
+                    <select id="statsType" onchange="updateStats()">
+                        <option value="bar">Bar Chart</option>
+                        <option value="line">Line Chart</option>
+                    </select>
+                    <select id="statsGrouping" onchange="updateStats()">
+                        <option value="hour">Per Hour</option>
+                        <option value="day">Per Day</option>
+                    </select>
+                    <select id="statsMode" onchange="updateStats()">
+                        <option value="normal">Normal Series</option>
+                        <option value="cumulative">Monthly Cumulative (By Hour)</option>
+                    </select>
+                    <span style="font-weight: 600; font-size: 14px;">Date Range:</span>
+                    <input type="date" id="statsDateStart" onchange="updateStats()">
+                    <span>to</span>
+                    <input type="date" id="statsDateEnd" onchange="updateStats()">
+                    <button class="action-btn" onclick="resetStatsFilters()">Reset</button>
+                </div>
+                <div class="card" style="flex-grow: 1; display:flex; flex-direction:column;">
+                    <div class="card-title" id="statsChartTitle">Activity Chart</div>
+                    <div style="flex-grow: 1; position: relative; min-height: 300px;">
+                        <canvas id="statsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MESSAGES TAB -->
+            <div id="messages-tab" class="tab-content">
+                <h2>Input Content</h2>
+                <div class="controls">
+                    <span style="font-weight: 600; font-size: 14px;">Date Range:</span>
+                    <input type="date" id="msgDateStart" onchange="updateMessages()">
+                    <span>to</span>
+                    <input type="date" id="msgDateEnd" onchange="updateMessages()">
+                    <button class="action-btn" onclick="resetMsgFilters()">Reset</button>
+                    <span id="msgCount" style="margin-left:auto; font-weight:600; font-size: 14px; color:#555;">0 messages</span>
+                </div>
+                <div class="message-list" id="messageList">
+                    <!-- Messages go here -->
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -208,31 +376,48 @@
         const { ipcRenderer } = require('electron');
         const path = require('path');
 
-        async function loadData() {
-            const data = await ipcRenderer.invoke('get-data');
-            const { path: confPath, data: confData } = await ipcRenderer.invoke('get-current-config');
-            
-            const panelConfig = confData.dashboard_panel || {};
+        let globalData = { clicks: {}, inputs: [] };
+        
+        let homeChartInstance = null;
+        let statsChartInstance = null;
+        let wordcloudActive = false;
 
-            // 1. Set background color (on HTML so it stays visible during scroll)
+        // Default colors for charts
+        const primaryColor = 'rgba(255, 99, 132, 0.6)';
+        const primaryBorder = 'rgba(255, 99, 132, 1)';
+        const secondaryColor = 'rgba(54, 162, 235, 0.6)';
+        const secondaryBorder = 'rgba(54, 162, 235, 1)';
+
+        async function init() {
+            // Load Customizations
+            const { path: confPath, data: confData } = await ipcRenderer.invoke('get-current-config');
+            applyPanelConfig(confData.dashboard_panel || {}, confPath);
+
+            // Fetch Data
+            globalData = await ipcRenderer.invoke('get-data');
+            
+            // Render Initial Views
+            renderHomeTab();
+            resetStatsFilters();
+            resetMsgFilters();
+        }
+
+        // --- Config & Styling ---
+        function applyPanelConfig(panelConfig, confPath) {
             if (panelConfig.panel_bg_color) {
                 document.documentElement.style.backgroundColor = panelConfig.panel_bg_color;
             }
-
-            // 2. Set centered background image and size
             if (panelConfig.panel_bg_image && confPath) {
                 const rootDir = path.dirname(confPath);
                 const fullImgPath = path.join(rootDir, panelConfig.panel_bg_image);
                 const bgImg = document.getElementById('bg-image');
-                bgImg.src = `file:///${fullImgPath.replace(/\\/g, '/')}`; // Added extra slash for proper file URI
+                bgImg.src = `file:///${fullImgPath.replace(/\\/g, '/')}`;
                 bgImg.style.display = 'block';
 
                 if (panelConfig.panel_bg_image_opacity !== undefined) {
                     bgImg.style.opacity = panelConfig.panel_bg_image_opacity;
                 }
-                
                 if (panelConfig.panel_bg_image_size) {
-                    // Support both object {width, height} and simple values
                     if (typeof panelConfig.panel_bg_image_size === 'object') {
                         if (panelConfig.panel_bg_image_size.width) bgImg.style.width = panelConfig.panel_bg_image_size.width + 'px';
                         if (panelConfig.panel_bg_image_size.height) bgImg.style.height = panelConfig.panel_bg_image_size.height + 'px';
@@ -241,49 +426,287 @@
                             panelConfig.panel_bg_image_size + 'px' : panelConfig.panel_bg_image_size;
                     }
                 } else {
-                    bgImg.style.width = '200px'; // Default size
+                    bgImg.style.width = '200px';
                 }
             }
-
-            // 3. Customize Glass Layer
             const glassLayer = document.getElementById('glass-layer');
             if (panelConfig.glass_layer_blur !== undefined) {
-                // Ensure backdrop filter is correctly formatted
                 const blurVal = typeof panelConfig.glass_layer_blur === 'number' ? `${panelConfig.glass_layer_blur}px` : panelConfig.glass_layer_blur;
                 glassLayer.style.backdropFilter = `blur(${blurVal})`;
             }
+        }
 
-            // Render Clicks
-            const clicksList = document.getElementById('clicks-list');
-            clicksList.innerHTML = '';
-            const hours = Object.keys(data.clicks).sort().reverse();
-            if (hours.length === 0) {
-                clicksList.innerHTML = '<li><span class="text" style="color:#888;">No clicks recorded yet.</span></li>';
-            } else {
-                hours.forEach(hour => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `<span class="text">${hour}</span> <span class="time">${data.clicks[hour]} clicks</span>`;
-                    clicksList.appendChild(li);
-                });
-            }
+        // --- Tab Logic ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(`${tabId}-tab`).classList.add('active');
+            event.currentTarget.classList.add('active');
 
-            // Render Inputs
-            const inputsList = document.getElementById('inputs-list');
-            inputsList.innerHTML = '';
-            const inputs = data.inputs.reverse();
-            if (inputs.length === 0) {
-                inputsList.innerHTML = '<li><span class="text" style="color:#888;">No inputs recorded yet.</span></li>';
-            } else {
-                inputs.forEach(input => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `<span class="text">${input.text}</span> <span class="time">${input.time}</span>`;
-                    inputsList.appendChild(li);
-                });
+            if (tabId === 'home') {
+                if(wordcloudActive) {
+                    // resize event triggers wordcloud redraw if needed
+                    window.dispatchEvent(new Event('resize'));
+                }
             }
         }
 
-        loadData();
+        // --- Home Tab ---
+        function renderHomeTab() {
+            // 7 Days Chart
+            const today = new Date();
+            const dates = [];
+            for (let i = 6; i >= 0; i--) {
+                let d = new Date(today);
+                d.setDate(d.getDate() - i);
+                dates.push(d.toISOString().split('T')[0]); // YYYY-MM-DD
+            }
+
+            const clickData = dates.map(dateStr => {
+                let count = 0;
+                Object.keys(globalData.clicks).forEach(k => {
+                    if (k.startsWith(dateStr)) count += globalData.clicks[k];
+                });
+                return count;
+            });
+
+            const inputData = dates.map(dateStr => {
+                let count = 0;
+                globalData.inputs.forEach(inp => {
+                    if (inp.time.startsWith(dateStr)) count++;
+                });
+                return count;
+            });
+
+            if (homeChartInstance) homeChartInstance.destroy();
+            const ctx = document.getElementById('homeChart').getContext('2d');
+            homeChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        { label: 'Clicks', data: clickData, borderColor: primaryBorder, backgroundColor: primaryColor, fill: true, tension: 0.3 },
+                        { label: 'Inputs', data: inputData, borderColor: secondaryBorder, backgroundColor: secondaryColor, fill: true, tension: 0.3 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+
+            // Word Cloud
+            renderWordCloud();
+        }
+
+        function renderWordCloud() {
+            const wc = document.getElementById('wordcloud-canvas');
+            const container = document.getElementById('wordcloud-container');
+            wc.width = container.clientWidth;
+            wc.height = container.clientHeight;
+
+            let wordsMap = {};
+            // Tokenization logic:
+            const segmenter = new Intl.Segmenter(undefined, { granularity: 'word' });
+            
+            globalData.inputs.forEach(inp => {
+                const segments = segmenter.segment(inp.text);
+                for (const {segment, isWordLike} of segments) {
+                    if (isWordLike && segment.length >= 1) {
+                        wordsMap[segment] = (wordsMap[segment] || 0) + 1;
+                    }
+                }
+            });
+
+            let list = Object.keys(wordsMap).map(k => [k, wordsMap[k]*15 + 10]); // scale up slightly
+            list.sort((a,b) => b[1] - a[1]);
+            list = list.slice(0, 80); // max 80 words
+
+            if(list.length === 0) {
+                list = [['No data', 30]];
+            }
+
+            WordCloud(wc, {
+                list: list,
+                fontFamily: 'Outfit, sans-serif',
+                color: 'random-dark',
+                rotateRatio: 0.3,
+                backgroundColor: 'transparent',
+                shrinkToFit: true
+            });
+            wordcloudActive = true;
+        }
+
+        window.addEventListener('resize', () => {
+            if (document.getElementById('home-tab').classList.contains('active')) {
+                // Throttle resize
+                clearTimeout(window.resizeTimer);
+                window.resizeTimer = setTimeout(() => {
+                    renderWordCloud();
+                }, 200);
+            }
+        });
+
+        // --- Stats Tab ---
+        function resetStatsFilters() {
+            document.getElementById('statsDateStart').value = '';
+            document.getElementById('statsDateEnd').value = '';
+            document.getElementById('statsType').value = 'bar';
+            document.getElementById('statsGrouping').value = 'hour';
+            document.getElementById('statsMode').value = 'normal';
+            updateStats();
+        }
+
+        function updateStats() {
+            const startStr = document.getElementById('statsDateStart').value;
+            const endStr = document.getElementById('statsDateEnd').value;
+            const type = document.getElementById('statsType').value;
+            const grouping = document.getElementById('statsGrouping').value; // hour or day
+            const mode = document.getElementById('statsMode').value; // normal or cumulative
+
+            let clicksFiltered = Object.keys(globalData.clicks);
+            let inputsFiltered = globalData.inputs.slice();
+
+            // Date filtering
+            if (startStr) {
+                clicksFiltered = clicksFiltered.filter(k => k.substring(0,10) >= startStr);
+                inputsFiltered = inputsFiltered.filter(i => i.time.substring(0,10) >= startStr);
+            }
+            if (endStr) {
+                clicksFiltered = clicksFiltered.filter(k => k.substring(0,10) <= endStr);
+                inputsFiltered = inputsFiltered.filter(i => i.time.substring(0,10) <= endStr);
+            }
+
+            let labels = [];
+            let clickCounts = [];
+            let inputCounts = [];
+            let title = '';
+
+            if (mode === 'cumulative') {
+                title = 'Cumulative Interactions by Hour of Day';
+                // Group by hour 00 to 23
+                labels = Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0') + ':00');
+                let hClicks = Array(24).fill(0);
+                let hInputs = Array(24).fill(0);
+
+                clicksFiltered.forEach(k => {
+                    // "2026-03-24-11:00"
+                    const hr = parseInt(k.split('-')[3].split(':')[0]);
+                    hClicks[hr] += globalData.clicks[k];
+                });
+                inputsFiltered.forEach(i => {
+                    // "2026-03-24-11:20:17"
+                    const hr = parseInt(i.time.split('-')[3].split(':')[0]);
+                    hInputs[hr]++;
+                });
+
+                clickCounts = hClicks;
+                inputCounts = hInputs;
+
+            } else {
+                title = 'Activity Timeline';
+                // Create map
+                let mapC = {};
+                let mapI = {};
+
+                clicksFiltered.forEach(k => {
+                    // k is "YYYY-MM-DD-HH:00"
+                    const key = grouping === 'day' ? k.substring(0,10) : k;
+                    mapC[key] = (mapC[key] || 0) + globalData.clicks[k];
+                });
+
+                inputsFiltered.forEach(i => {
+                    // i.time is "YYYY-MM-DD-HH:mm:ss"
+                    const parts = i.time.split('-');
+                    let key = i.time.substring(0,10);
+                    if(grouping === 'hour') {
+                        key = `${key}-${parts[3].split(':')[0]}:00`;
+                    }
+                    mapI[key] = (mapI[key] || 0) + 1;
+                });
+
+                // Get sorted unique keys
+                const allKeys = Array.from(new Set([...Object.keys(mapC), ...Object.keys(mapI)])).sort();
+                labels = allKeys;
+                clickCounts = allKeys.map(k => mapC[k] || 0);
+                inputCounts = allKeys.map(k => mapI[k] || 0);
+            }
+
+            document.getElementById('statsChartTitle').innerText = title;
+
+            if (statsChartInstance) statsChartInstance.destroy();
+            const ctx = document.getElementById('statsChart').getContext('2d');
+            statsChartInstance = new Chart(ctx, {
+                type: type,
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Clicks', data: clickCounts, backgroundColor: primaryColor, borderColor: primaryBorder, borderWidth: 1 },
+                        { label: 'Inputs', data: inputCounts, backgroundColor: secondaryColor, borderColor: secondaryBorder, borderWidth: 1 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        // --- Messages Tab ---
+        function resetMsgFilters() {
+            document.getElementById('msgDateStart').value = '';
+            document.getElementById('msgDateEnd').value = '';
+            updateMessages();
+        }
+
+        function updateMessages() {
+            const startStr = document.getElementById('msgDateStart').value;
+            const endStr = document.getElementById('msgDateEnd').value;
+            let inputsFiltered = globalData.inputs.slice();
+
+            if (startStr) {
+                inputsFiltered = inputsFiltered.filter(i => i.time.substring(0,10) >= startStr);
+            }
+            if (endStr) {
+                inputsFiltered = inputsFiltered.filter(i => i.time.substring(0,10) <= endStr);
+            }
+
+            inputsFiltered.reverse(); // newest first
+            const listEl = document.getElementById('messageList');
+            listEl.innerHTML = '';
+            document.getElementById('msgCount').innerText = `${inputsFiltered.length} messages`;
+
+            if (inputsFiltered.length === 0) {
+                listEl.innerHTML = '<div style="color:#666;text-align:center;margin-top:20px;">No messages found for this range.</div>';
+                return;
+            }
+
+            inputsFiltered.forEach(msg => {
+                const item = document.createElement('div');
+                item.className = 'message-item';
+                
+                // parse time format: "2026-03-24-11:20:17"
+                const parts = msg.time.split('-');
+                let prettyTime = msg.time;
+                if(parts.length >= 4) {
+                    prettyTime = `${parts[0]}-${parts[1]}-${parts[2]} ${parts[3]}`;
+                }
+
+                item.innerHTML = `
+                    <div class="msg-text">${msg.text}</div>
+                    <div class="msg-meta">${prettyTime}</div>
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
+        // Start
+        init();
     </script>
 </body>
-
 </html>
