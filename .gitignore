@@ -3,3 +3,4 @@ dist
 mascot_data.json
 package-lock.json
 .vscode
+src/data
