@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain, Menu, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
-app.disableHardwareAcceleration();
+// app.disableHardwareAcceleration();
 
 // Global variable to track which character is currently active
 let currentConfigPath = null;

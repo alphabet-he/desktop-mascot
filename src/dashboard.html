@@ -11,8 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         html {
-            background-color: #f7e5aa;
-            /* Updated base background from Figma */
+            background-color: transparent;
         }
 
         * {
@@ -213,12 +212,12 @@
 
         .sub-nav-pills {
             display: flex;
-            background: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.7);
             border-radius: 20px;
             padding: 4px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.4);
-            backdrop-filter: blur(12px);
+            /* backdrop-filter: blur(12px); */
         }
 
         .sub-nav-btn {
@@ -415,7 +414,7 @@
     <div id="bg-image-container">
         <img id="bg-image" src="" style="display: none;">
     </div>
-    <div id="glass-layer"></div>
+    <!-- <div id="glass-layer"></div> -->
 
     <div id="app">
         <div class="header">
@@ -581,6 +580,21 @@
 
         let stopWordsSet = new Set();
 
+        // Pre-indexed click data: Map<dateStr, Map<hour, count>>
+        let clicksByDate = new Map();
+
+        function buildClickIndex() {
+            clicksByDate = new Map();
+            Object.keys(globalData.clicks).forEach(k => {
+                const dateStr = k.substring(0, 10);
+                const hr = parseInt(k.substring(11, 13));
+                const count = globalData.clicks[k];
+                if (!clicksByDate.has(dateStr)) clicksByDate.set(dateStr, new Map());
+                const hourMap = clicksByDate.get(dateStr);
+                hourMap.set(hr, (hourMap.get(hr) || 0) + count);
+            });
+        }
+
         async function init() {
             const list = await ipcRenderer.invoke('get-stopwords');
             stopWordsSet = new Set(list);
@@ -591,6 +605,7 @@
 
             Chart.defaults.font.family = "'Outfit', sans-serif";
             Chart.defaults.color = "#999";
+            buildClickIndex();
 
             const today = new Date();
             const startDay = new Date(today);
@@ -601,7 +616,7 @@
             calMonth = today.getMonth();
 
             renderOverview();
-            renderActivity();
+            // Removed initActivityCharts() from here to lazy-load it instead
             renderCalendar();
             updateMessages();
         }
@@ -619,7 +634,13 @@
             } else if (tabId === 'overview') {
                 window.dispatchEvent(new Event('resize'));
             } else if (tabId === 'activity') {
+                // Lazy-load activity charts on first view
+                if (!timelineChartInst) {
+                    initActivityCharts();
+                }
                 renderActivity();
+                // Help Chart.js detect container size after switching from hidden
+                setTimeout(() => window.dispatchEvent(new Event('resize')), 0);
             } else if (tabId === 'notebook') {
                 updateMessages();
             }
@@ -657,14 +678,14 @@
             let todayNotes = 0;
             let hourCounts = Array(24).fill(0);
 
-            // globalData.clicks Keys: "YYYY-MM-DD-HH:00"
-            Object.keys(globalData.clicks).forEach(k => {
-                if (k.startsWith(todayStr)) {
-                    todayClicks += globalData.clicks[k];
-                    const hr = parseInt(k.substring(11, 13));
-                    hourCounts[hr] += globalData.clicks[k];
-                }
-            });
+            // Use pre-indexed click data for O(1) lookup
+            const todayClickMap = clicksByDate.get(todayStr);
+            if (todayClickMap) {
+                todayClickMap.forEach((count, hr) => {
+                    todayClicks += count;
+                    hourCounts[hr] += count;
+                });
+            }
 
             // globalData.inputs Time: "YYYY-MM-DD-HH:mm:ss"
             globalData.inputs.forEach(i => {
@@ -686,38 +707,41 @@
                 document.getElementById('peak-engagement').innerText = `${String(peakHr).padStart(2, '0')}:00`;
             }
 
-            // Trend Chart
-            if (trendChartInst) trendChartInst.destroy();
-            const ctxTrend = document.getElementById('trendChart').getContext('2d');
+            // Trend Chart — update in-place if already created
+            if (trendChartInst) {
+                trendChartInst.data.datasets[0].data = hourCounts;
+                trendChartInst.update();
+            } else {
+                const ctxTrend = document.getElementById('trendChart').getContext('2d');
+                let gradient = ctxTrend.createLinearGradient(0, 0, 0, 60);
+                gradient.addColorStop(0, 'rgba(246, 109, 109, 0.4)');
+                gradient.addColorStop(1, 'rgba(246, 109, 109, 0.0)');
 
-            let gradient = ctxTrend.createLinearGradient(0, 0, 0, 60);
-            gradient.addColorStop(0, 'rgba(246, 109, 109, 0.4)');
-            gradient.addColorStop(1, 'rgba(246, 109, 109, 0.0)');
-
-            trendChartInst = new Chart(ctxTrend, {
-                type: 'line',
-                data: {
-                    labels: Array.from({ length: 24 }, (_, i) => i),
-                    datasets: [{
-                        data: hourCounts,
-                        borderColor: C_RED,
-                        backgroundColor: gradient,
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 0,
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                    scales: {
-                        x: { display: false },
-                        y: { display: false, min: 0 }
+                trendChartInst = new Chart(ctxTrend, {
+                    type: 'line',
+                    data: {
+                        labels: Array.from({ length: 24 }, (_, i) => i),
+                        datasets: [{
+                            data: hourCounts,
+                            borderColor: C_RED,
+                            backgroundColor: gradient,
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 0,
+                        }]
                     },
-                    layout: { padding: 0 }
-                }
-            });
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                        scales: {
+                            x: { display: false },
+                            y: { display: false, min: 0 }
+                        },
+                        layout: { padding: 0 }
+                    }
+                });
+            }
 
             renderOverviewWordCloud();
         }
@@ -739,10 +763,13 @@
                 if (wc.width === 0 || wc.height === 0) return;
 
                 let wordsMap = {};
-                const segmenter = new Intl.Segmenter(undefined, { granularity: 'word' });
+                // Cache the segmenter to avoid expensive re-creation
+                if (!window.wcSegmenter) {
+                    window.wcSegmenter = new Intl.Segmenter(undefined, { granularity: 'word' });
+                }
 
                 inputs.forEach(inp => {
-                    const segments = segmenter.segment(inp.text);
+                    const segments = window.wcSegmenter.segment(inp.text);
                     for (const { segment, isWordLike } of segments) {
                         const isCJK = /[\u4e00-\u9fff\u3400-\u4dbf]/.test(segment);
                         if (isWordLike && !stopWordsSet.has(segment) && (segment.length >= 2 || isCJK)) {
@@ -790,68 +817,9 @@
         });
 
         // --- ACTIVITY TAB ---
-        function renderActivity() {
-            let labels = [];
-            let clicksData = [];
-            let dialogsData = [];
-            let barLabels = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0') + ':00');
-            let barClicks = Array(24).fill(0);
-            let barDialogs = Array(24).fill(0);
-
-            if (currentActivityRange === 'day') {
-                const todayStr = getLocalDateStr(new Date());
-                labels = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0') + ':00');
-                clicksData = Array(24).fill(0);
-                dialogsData = Array(24).fill(0);
-
-                Object.keys(globalData.clicks).forEach(k => {
-                    if (k.startsWith(todayStr)) {
-                        const hr = parseInt(k.substring(11, 13));
-                        clicksData[hr] += globalData.clicks[k];
-                        barClicks[hr] += globalData.clicks[k];
-                    }
-                });
-                globalData.inputs.forEach(i => {
-                    if (i.time.startsWith(todayStr)) {
-                        const hr = parseInt(i.time.substring(11, 13));
-                        dialogsData[hr]++;
-                        barDialogs[hr]++;
-                    }
-                });
-            } else {
-                const days = currentActivityRange === 'week' ? 7 : 30;
-                labels = getKeysInRange(days); // e.g. ["2026-03-24", ...]
-                clicksData = Array(days).fill(0);
-                dialogsData = Array(days).fill(0);
-
-                labels.forEach((dateStr, idx) => {
-                    Object.keys(globalData.clicks).forEach(k => {
-                        if (k.startsWith(dateStr)) {
-                            clicksData[idx] += globalData.clicks[k];
-                            const hr = parseInt(k.substring(11, 13));
-                            barClicks[hr] += globalData.clicks[k];
-                        }
-                    });
-                    globalData.inputs.forEach(i => {
-                        if (i.time.startsWith(dateStr)) {
-                            dialogsData[idx]++;
-                            const hr = parseInt(i.time.substring(11, 13));
-                            barDialogs[hr]++;
-                        }
-                    });
-                });
-
-                // Format labels for timeline "MM/DD"
-                labels = labels.map(l => {
-                    const d = new Date(l);
-                    return `${d.getMonth() + 1}/${d.getDate()}`;
-                });
-            }
-
-            // Timeline Line Chart
-            if (timelineChartInst) timelineChartInst.destroy();
+        // Create charts once, then update data in-place
+        function initActivityCharts() {
             const ctxLine = document.getElementById('timelineChart').getContext('2d');
-
             let gradBg = ctxLine.createLinearGradient(0, 0, 0, 250);
             gradBg.addColorStop(0, 'rgba(246, 109, 109, 0.15)');
             gradBg.addColorStop(1, 'rgba(246, 109, 109, 0.0)');
@@ -859,10 +827,10 @@
             timelineChartInst = new Chart(ctxLine, {
                 type: 'line',
                 data: {
-                    labels: labels,
+                    labels: [],
                     datasets: [
-                        { label: 'Clicks', data: clicksData, borderColor: C_RED, backgroundColor: gradBg, fill: true, tension: 0.4, borderWidth: 3, pointRadius: 0, pointHoverRadius: 5 },
-                        { label: 'Dialogues', data: dialogsData, borderColor: C_BLUE, backgroundColor: 'transparent', fill: false, tension: 0.4, borderWidth: 3, pointRadius: 0, pointHoverRadius: 5 }
+                        { label: 'Clicks', data: [], borderColor: C_RED, backgroundColor: gradBg, fill: true, tension: 0.4, borderWidth: 3, pointRadius: 0, pointHoverRadius: 5 },
+                        { label: 'Dialogues', data: [], borderColor: C_BLUE, backgroundColor: 'transparent', fill: false, tension: 0.4, borderWidth: 3, pointRadius: 0, pointHoverRadius: 5 }
                     ]
                 },
                 options: {
@@ -878,16 +846,14 @@
                 }
             });
 
-            // Cumulative Bar Chart
-            if (barChartInst) barChartInst.destroy();
             const ctxBar = document.getElementById('barChart').getContext('2d');
             barChartInst = new Chart(ctxBar, {
                 type: 'bar',
                 data: {
-                    labels: barLabels,
+                    labels: Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0') + ':00'),
                     datasets: [
-                        { label: 'Clicks', data: barClicks, backgroundColor: C_RED, borderRadius: 4, barPercentage: 0.6 },
-                        { label: 'Dialogues', data: barDialogs, backgroundColor: C_BLUE, borderRadius: 4, barPercentage: 0.6 }
+                        { label: 'Clicks', data: Array(24).fill(0), backgroundColor: C_RED, borderRadius: 4, barPercentage: 0.6 },
+                        { label: 'Dialogues', data: Array(24).fill(0), backgroundColor: C_BLUE, borderRadius: 4, barPercentage: 0.6 }
                     ]
                 },
                 options: {
@@ -900,6 +866,76 @@
                     }
                 }
             });
+        }
+
+        function renderActivity() {
+            let labels = [];
+            let clicksData = [];
+            let dialogsData = [];
+            let barClicks = Array(24).fill(0);
+            let barDialogs = Array(24).fill(0);
+
+            if (currentActivityRange === 'day') {
+                const todayStr = getLocalDateStr(new Date());
+                labels = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0') + ':00');
+                clicksData = Array(24).fill(0);
+                dialogsData = Array(24).fill(0);
+
+                // Use pre-indexed click data
+                const todayClickMap = clicksByDate.get(todayStr);
+                if (todayClickMap) {
+                    todayClickMap.forEach((count, hr) => {
+                        clicksData[hr] += count;
+                        barClicks[hr] += count;
+                    });
+                }
+                globalData.inputs.forEach(i => {
+                    if (i.time.startsWith(todayStr)) {
+                        const hr = parseInt(i.time.substring(11, 13));
+                        dialogsData[hr]++;
+                        barDialogs[hr]++;
+                    }
+                });
+            } else {
+                const days = currentActivityRange === 'week' ? 7 : 30;
+                const dateKeys = getKeysInRange(days); // e.g. ["2026-03-24", ...]
+                clicksData = Array(days).fill(0);
+                dialogsData = Array(days).fill(0);
+
+                dateKeys.forEach((dateStr, idx) => {
+                    // Use pre-indexed click data — O(hours) per day instead of O(allKeys)
+                    const dayClickMap = clicksByDate.get(dateStr);
+                    if (dayClickMap) {
+                        dayClickMap.forEach((count, hr) => {
+                            clicksData[idx] += count;
+                            barClicks[hr] += count;
+                        });
+                    }
+                    globalData.inputs.forEach(i => {
+                        if (i.time.startsWith(dateStr)) {
+                            dialogsData[idx]++;
+                            const hr = parseInt(i.time.substring(11, 13));
+                            barDialogs[hr]++;
+                        }
+                    });
+                });
+
+                // Format labels for timeline "MM/DD"
+                labels = dateKeys.map(l => {
+                    const d = new Date(l);
+                    return `${d.getMonth() + 1}/${d.getDate()}`;
+                });
+            }
+
+            // Update charts in-place (no destroy/recreate)
+            timelineChartInst.data.labels = labels;
+            timelineChartInst.data.datasets[0].data = clicksData;
+            timelineChartInst.data.datasets[1].data = dialogsData;
+            timelineChartInst.update();
+
+            barChartInst.data.datasets[0].data = barClicks;
+            barChartInst.data.datasets[1].data = barDialogs;
+            barChartInst.update();
         }
 
         // --- NOTEBOOK TAB ---

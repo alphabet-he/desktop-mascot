@@ -11,8 +11,7 @@
     "panel_bg_image_size": {
       "width": 200,
       "height": 200
-    },
-    "glass_layer_blur": 5
+    }
   },
   "dashboard_panel": {
     "panel_bg_color": "#e8e0d9",
@@ -20,8 +19,7 @@
     "panel_bg_image_size": {
       "width": 200,
       "height": 200
-    },
-    "glass_layer_blur": 5
+    }
   },
   "dialogue": [
     "Meow",

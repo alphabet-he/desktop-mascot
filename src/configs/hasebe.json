@@ -6,22 +6,20 @@
   },
   "img_path": "118.png",
   "edit_dialogue_panel": {
-    "panel_bg_color": "#f6d365",
+    "panel_bg_color": "#f1f1f8",
     "panel_bg_image": "logo.png",
     "panel_bg_image_size": {
       "width": 200,
       "height": 200
-    },
-    "glass_layer_blur": 0
+    }
   },
   "dashboard_panel": {
-    "panel_bg_color": "#a18cd1",
+    "panel_bg_color": "#d8d8e6",
     "panel_bg_image": "logo.png",
     "panel_bg_image_size": {
       "width": 200,
       "height": 200
-    },
-    "glass_layer_blur": 0
+    }
   },
   "dialogue": [
     "想要说什么吗",

@@ -34,7 +34,10 @@
 
 #bg-image-container {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -47,7 +50,7 @@
     opacity: 1;
 }
 
-#glass-layer {
+/* #glass-layer {
     position: fixed;
     top: 0;
     left: 0;
@@ -56,19 +59,23 @@
     background: rgba(255, 255, 255, 0.3);
     backdrop-filter: blur(8px);
     z-index: 0;
-}
+} */
 
-.card, .form-group, .message-item {
-    background: rgba(255, 255, 255, 0.5);
+.card,
+.form-group,
+.message-item {
+    background: rgba(255, 255, 255, 0.7);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(12px);
+    /* backdrop-filter: blur(12px); */
     transition: transform 0.2s ease;
     padding: 24px;
     border-radius: 24px;
     margin-bottom: 20px;
 }
 
-.card:hover, .form-group:hover, .message-item:hover {
+.card:hover,
+.form-group:hover,
+.message-item:hover {
     transform: translateY(-2px);
 }
