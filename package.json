@@ -1,11 +1,11 @@
 {
-  "name": "desktop-widget",
-  "version": "1.0.0",
+  "name": "desktop-companion",
+  "version": "2.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "start": "electron .",
-    "build": "npx electron-packager . MyWidget --platform=darwin --arch=x64 --out=dist --overwrite && cp config.json img.png dist/MyWidget-darwin-x64/"
+    "build": "npx electron-packager . --platform=darwin --arch=x64 --asar --out=dist --overwrite"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +15,7 @@
     "electron-packager": "^17.1.2"
   },
   "dependencies": {
+    "chart.js": "^4.5.1",
     "wordcloud": "^1.2.3"
   }
 }

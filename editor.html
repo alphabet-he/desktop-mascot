@@ -8,7 +8,8 @@
     <link rel="stylesheet" href="panel-shared.css">
     <style>
         html {
-            background-color: #a18cd1; /* Default background color */
+            background-color: #a18cd1;
+            /* Default background color */
         }
 
         body {
@@ -23,8 +24,6 @@
             flex-direction: column;
         }
 
-
-
         #content {
             padding: 25px;
             flex-grow: 1;
@@ -32,8 +31,6 @@
             position: relative;
             z-index: 1;
         }
-
-
 
         h1 {
             font-size: 28px;
@@ -51,8 +48,6 @@
             margin-bottom: 25px;
             font-weight: 500;
         }
-
-
 
         label {
             display: block;
@@ -89,6 +84,7 @@
         ::-webkit-scrollbar {
             display: none;
         }
+
         * {
             -ms-overflow-style: none;
             scrollbar-width: none;
@@ -160,7 +156,7 @@
         </div>
 
         <div class="form-group">
-            <label>Normal (Click) Dialogues</label>
+            <label>Normal Dialogues</label>
             <textarea id="dialogue-normal"></textarea>
         </div>
 
@@ -210,7 +206,7 @@
             configData.dialogue_quit = parseArray(document.getElementById('dialogue-quit').value);
 
             const result = await ipcRenderer.invoke('save-config', { confPath: currentConfigPath, confData: configData });
-            
+
             if (result.success) {
                 const status = document.getElementById('status');
                 status.style.opacity = '1';
