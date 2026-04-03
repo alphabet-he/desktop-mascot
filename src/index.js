@@ -150,10 +150,17 @@ function loadStopWords() {
   return readJson(stopWordsFilePath, ["我", "你", "的", "了", "好"]);
 }
 
+function getActiveCharacterName() {
+  if (!currentConfigPath) return 'default';
+  const config = loadConfig(currentConfigPath);
+  return config.name || path.basename(currentConfigPath, '.json');
+}
+
 function getDataFilePath(date = new Date()) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
-  return path.join(getRootDir(), 'data', `${year}-${month}.json`);
+  const charName = getActiveCharacterName();
+  return path.join(getRootDir(), 'data', charName, `${year}-${month}.json`);
 }
 
 function loadDataForDate(date) {
@@ -161,7 +168,8 @@ function loadDataForDate(date) {
 }
 
 function saveDataForDate(data, date) {
-  const dir = path.join(getRootDir(), 'data');
+  const charName = getActiveCharacterName();
+  const dir = path.join(getRootDir(), 'data', charName);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -169,7 +177,8 @@ function saveDataForDate(data, date) {
 }
 
 function loadAllData() {
-  const dataDir = path.join(getRootDir(), 'data');
+  const charName = getActiveCharacterName();
+  const dataDir = path.join(getRootDir(), 'data', charName);
   const merged = { clicks: {}, inputs: [] };
   if (!fs.existsSync(dataDir)) return merged;
 

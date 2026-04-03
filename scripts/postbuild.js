@@ -13,7 +13,6 @@ const folders = fs.readdirSync(distDir);
 for (const folder of folders) {
     const platformFolder = path.join(distDir, folder);
     const stat = fs.statSync(platformFolder);
-    
     if (stat.isDirectory() && folder.startsWith('desktop-companion-')) {
         const targetDir = path.join(platformFolder, 'configs');
         console.log(`Copying templates to ${targetDir}...`);
