@@ -133,6 +133,7 @@ app.on('before-quit', (e) => {
 
 // --- DATA STORE HELPERS ---
 const stopWordsFilePath = path.join(getRootDir(), 'configs', 'stopwords.json');
+const dictionaryFilePath = path.join(getRootDir(), 'configs', 'dictionary.json');
 
 function readJson(filePath, defaultValue) {
   try {
@@ -147,7 +148,11 @@ function writeJson(filePath, data) {
 }
 
 function loadStopWords() {
-  return readJson(stopWordsFilePath, ["我", "你", "的", "了", "好"]);
+  return readJson(stopWordsFilePath, []);
+}
+
+function loadDictionary() {
+  return readJson(dictionaryFilePath, []);
 }
 
 function getActiveCharacterName() {
@@ -257,6 +262,13 @@ ipcMain.handle('get-stopwords', () => loadStopWords());
 ipcMain.handle('save-stopwords', (event, list) => {
   try {
     writeJson(stopWordsFilePath, list);
+    return true;
+  } catch (e) { return false; }
+});
+ipcMain.handle('get-dictionary', () => loadDictionary());
+ipcMain.handle('save-dictionary', (event, list) => {
+  try {
+    writeJson(dictionaryFilePath, list);
     return true;
   } catch (e) { return false; }
 });
