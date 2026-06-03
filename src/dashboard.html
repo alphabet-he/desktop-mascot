@@ -7,8 +7,7 @@
     <!-- Use Outfit font -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="panel-shared.css">
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js is bundled locally and loaded via require() in the main script below -->
     <style>
         html {
             background-color: transparent;
@@ -560,6 +559,7 @@
     <script>
         const { ipcRenderer } = require('electron');
         const WordCloud = require('wordcloud');
+        const Chart = require('chart.js/auto');
         const { applyPanelConfig } = require('./panel-config.js');
 
         let globalData = { clicks: {}, inputs: [] };
