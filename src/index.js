@@ -4,6 +4,8 @@ const fs = require('fs');
 
 // app.disableHardwareAcceleration();
 
+const appIconPath = path.join(__dirname, '../assets/icons/icon.png');
+
 // Global variable to track which character is currently active
 let currentConfigPath = null;
 
@@ -80,8 +82,12 @@ function createWindow() {
     alwaysOnTop: true,
     resizable: false,
     hasShadow: false,
-    //skipTaskbar: true,
+    icon: appIconPath,
     webPreferences: { nodeIntegration: true, contextIsolation: false }
+  });
+
+  mainWin.on('closed', () => {
+    mainWin = null;
   });
 
   if (process.platform === 'darwin') {
@@ -109,7 +115,25 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(async () => {
+  if (process.platform === 'darwin') {
+    app.setActivationPolicy('regular');
+    app.dock.setIcon(appIconPath);
+    await app.dock.show();
+  }
+
+  createWindow();
+});
+
+app.on('activate', () => {
+  if (!mainWin || mainWin.isDestroyed()) {
+    createWindow();
+    return;
+  }
+
+  mainWin.show();
+  mainWin.focus();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
