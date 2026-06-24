@@ -242,6 +242,190 @@
             padding-bottom: 20px;
         }
 
+        .heatmap-card {
+            margin-bottom: 20px;
+            padding-bottom: 24px;
+        }
+
+        .heatmap-wrap {
+            overflow-x: hidden;
+            padding: 4px 2px 2px;
+        }
+
+        .heatmap-years {
+            width: 100%;
+        }
+
+        .heatmap-year {
+            display: grid;
+            grid-template-columns: 74px 1fr;
+            gap: 16px;
+            align-items: start;
+        }
+
+        .heatmap-year-btn {
+            align-self: center;
+            border: none;
+            background: rgba(255, 255, 255, 0.65);
+            border-radius: 14px;
+            color: #333;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            font-weight: 800;
+            padding: 8px 10px;
+            transition: all 0.2s;
+        }
+
+        .heatmap-year-btn:hover:not(:disabled) {
+            background: #fff;
+            color: #333;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+        }
+
+        .heatmap-year-btn:disabled {
+            cursor: default;
+            opacity: 1;
+        }
+
+        .heatmap-body {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .heatmap-quarter {
+            display: grid;
+            row-gap: 5px;
+        }
+
+        .heatmap-months {
+            display: grid;
+            column-gap: 3px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #777;
+            line-height: 1;
+        }
+
+        .heatmap-month {
+            white-space: nowrap;
+            grid-row: 1;
+        }
+
+        .heatmap-grid-wrap {
+            display: grid;
+            grid-column: 1 / -1;
+        }
+
+        .heatmap-grid {
+            display: grid;
+            grid-template-rows: repeat(7, 10px);
+            gap: 3px;
+            width: 100%;
+        }
+
+        .heatmap-cell {
+            width: 100%;
+            min-width: 9px;
+            height: 10px;
+            border: none;
+            border-radius: 2px;
+            background: rgba(0, 0, 0, 0.04);
+            cursor: default;
+            padding: 0;
+        }
+
+        .heatmap-tooltip {
+            position: fixed;
+            z-index: 1000;
+            pointer-events: none;
+            background: rgba(51, 51, 51, 0.86);
+            color: #fff;
+            border-radius: 10px;
+            padding: 8px 10px;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.35;
+            white-space: pre-line;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            transform: translate(10px, 10px);
+            transition: opacity 0.12s ease;
+        }
+
+        .heatmap-tooltip.visible {
+            opacity: 1;
+        }
+
+        .heatmap-cell.level-1 {
+            background: #eadcf0;
+        }
+
+        .heatmap-cell.level-2 {
+            background: #d6b7df;
+        }
+
+        .heatmap-cell.level-3 {
+            background: #b98ac9;
+        }
+
+        .heatmap-cell.level-4 {
+            background: #9259ab;
+        }
+
+        .heatmap-cell.level-5 {
+            background: #6c348c;
+        }
+
+        .heatmap-cell.click.level-1 {
+            background: #f7d6cb;
+        }
+
+        .heatmap-cell.click.level-2 {
+            background: #efa990;
+        }
+
+        .heatmap-cell.click.level-3 {
+            background: #e67663;
+        }
+
+        .heatmap-cell.click.level-4 {
+            background: #c94651;
+        }
+
+        .heatmap-cell.click.level-5 {
+            background: #96253c;
+        }
+
+        .heatmap-cell.dialogue.level-1 {
+            background: #d7e6ef;
+        }
+
+        .heatmap-cell.dialogue.level-2 {
+            background: #abcadf;
+        }
+
+        .heatmap-cell.dialogue.level-3 {
+            background: #7ba1c2;
+        }
+
+        .heatmap-cell.dialogue.level-4 {
+            background: #4f7fa7;
+        }
+
+        .heatmap-cell.dialogue.level-5 {
+            background: #2f5f88;
+        }
+
+        .heatmap-empty {
+            color: #999;
+            font-size: 14px;
+            font-weight: 700;
+            padding: 24px 0;
+            text-align: center;
+        }
+
         .notebook-layout {
             display: flex;
             flex-direction: column;
@@ -502,7 +686,7 @@
             <!-- ACTIVITY TAB -->
             <div id="activity-tab" class="tab-content">
                 <div class="sub-nav">
-                    <div class="sub-nav-pills">
+                    <div class="sub-nav-pills" id="activity-range-pills">
                         <button class="sub-nav-btn active" id="btn-day" onclick="setActivityRange('day')">Day</button>
                         <button class="sub-nav-btn" id="btn-week" onclick="setActivityRange('week')">Week</button>
                         <button class="sub-nav-btn" id="btn-month" onclick="setActivityRange('month')">Month</button>
@@ -524,6 +708,26 @@
                         the selected period.</div>
                     <div style="height: 250px; position:relative;">
                         <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="sub-nav">
+                    <div class="sub-nav-pills" id="heatmap-mode-pills">
+                        <button class="sub-nav-btn active" id="btn-heatmap-total"
+                            onclick="setHeatmapMode('total')">Total</button>
+                        <button class="sub-nav-btn" id="btn-heatmap-clicks"
+                            onclick="setHeatmapMode('clicks')">Clicks</button>
+                        <button class="sub-nav-btn" id="btn-heatmap-dialogues"
+                            onclick="setHeatmapMode('dialogues')">Dialogues</button>
+                    </div>
+                </div>
+
+                <div class="card heatmap-card">
+                    <div class="stat-title" style="margin-bottom: 10px;">ACTIVITY CALENDAR</div>
+                    <div class="stat-subtitle" style="margin-top: 5px; margin-bottom: 20px;">Daily activity across each
+                        year.</div>
+                    <div class="heatmap-wrap">
+                        <div class="heatmap-years" id="activity-heatmap"></div>
                     </div>
                 </div>
             </div>
@@ -567,6 +771,8 @@
         let timelineChartInst = null;
         let barChartInst = null;
         let currentActivityRange = 'day'; // day, week, month
+        let currentHeatmapMode = 'total'; // total, clicks, dialogues
+        let selectedHeatmapYear = null;
         let wordcloudDrawn = false;
 
         // Calendar state
@@ -652,9 +858,16 @@
 
         function setActivityRange(range) {
             currentActivityRange = range;
-            document.querySelectorAll('.sub-nav-btn').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('#activity-range-pills .sub-nav-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(`btn-${range}`).classList.add('active');
             renderActivity();
+        }
+
+        function setHeatmapMode(mode) {
+            currentHeatmapMode = mode;
+            document.querySelectorAll('#heatmap-mode-pills .sub-nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`btn-heatmap-${mode}`).classList.add('active');
+            renderActivityHeatmap();
         }
 
         // --- DATA HELPERS ---
@@ -836,14 +1049,17 @@
             let gradBg = ctxLine.createLinearGradient(0, 0, 0, 250);
             gradBg.addColorStop(0, 'rgba(246, 109, 109, 0.15)');
             gradBg.addColorStop(1, 'rgba(246, 109, 109, 0.0)');
+            let gradBgBlue = ctxLine.createLinearGradient(0, 0, 0, 250);
+            gradBgBlue.addColorStop(0, 'rgba(123, 161, 194, 0.18)');
+            gradBgBlue.addColorStop(1, 'rgba(123, 161, 194, 0.0)');
 
             timelineChartInst = new Chart(ctxLine, {
                 type: 'line',
                 data: {
                     labels: [],
                     datasets: [
-                        { label: 'Clicks', data: [], borderColor: C_RED, backgroundColor: gradBg, fill: true, tension: 0.4, borderWidth: 3, pointRadius: 0, pointHoverRadius: 5 },
-                        { label: 'Dialogues', data: [], borderColor: C_BLUE, backgroundColor: 'transparent', fill: false, tension: 0.4, borderWidth: 3, pointRadius: 0, pointHoverRadius: 5 }
+                        { label: 'Clicks', data: [], yAxisID: 'yClicks', borderColor: C_RED, backgroundColor: gradBg, fill: true, tension: 0.4, borderWidth: 3, pointRadius: 0, pointHoverRadius: 5, pointStyle: 'circle', pointBackgroundColor: 'transparent', pointBorderColor: C_RED, pointBorderWidth: 3 },
+                        { label: 'Dialogues', data: [], yAxisID: 'yDialogues', borderColor: C_BLUE, backgroundColor: gradBgBlue, fill: true, tension: 0.4, borderWidth: 3, pointRadius: 0, pointHoverRadius: 5, pointStyle: 'circle', pointBackgroundColor: 'transparent', pointBorderColor: C_BLUE, pointBorderWidth: 3 }
                     ]
                 },
                 options: {
@@ -854,7 +1070,8 @@
                     },
                     scales: {
                         x: { grid: { display: false }, ticks: { font: { family: "Outfit" } } },
-                        y: { border: { dash: [4, 4] }, grid: { color: 'rgba(0,0,0,0.05)', tickBorderDash: [4, 4] }, ticks: { stepSize: 15, font: { family: "Outfit" } }, beginAtZero: true }
+                        yClicks: { position: 'left', border: { dash: [4, 4] }, grid: { color: 'rgba(0,0,0,0.05)', tickBorderDash: [4, 4] }, ticks: { font: { family: "Outfit" } }, beginAtZero: true },
+                        yDialogues: { position: 'right', border: { dash: [4, 4] }, grid: { drawOnChartArea: false }, ticks: { precision: 0, font: { family: "Outfit" } }, beginAtZero: true }
                     }
                 }
             });
@@ -865,8 +1082,8 @@
                 data: {
                     labels: Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0') + ':00'),
                     datasets: [
-                        { label: 'Clicks', data: Array(24).fill(0), backgroundColor: C_RED, borderRadius: 4, barPercentage: 0.6 },
-                        { label: 'Dialogues', data: Array(24).fill(0), backgroundColor: C_BLUE, borderRadius: 4, barPercentage: 0.6 }
+                        { label: 'Clicks', type: 'bar', data: Array(24).fill(0), yAxisID: 'yClicks', backgroundColor: C_RED, borderRadius: 4, categoryPercentage: 0.7, barPercentage: 0.78 },
+                        { label: 'Dialogues', type: 'bar', data: Array(24).fill(0), yAxisID: 'yDialogues', backgroundColor: C_BLUE, borderRadius: 4, categoryPercentage: 0.7, barPercentage: 0.78 }
                     ]
                 },
                 options: {
@@ -874,8 +1091,9 @@
                     interaction: { mode: 'index', intersect: false },
                     plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { family: "Outfit", weight: '600' } } } },
                     scales: {
-                        x: { stacked: true, grid: { display: false }, ticks: { maxTicksLimit: 12, font: { family: "Outfit" } } },
-                        y: { stacked: true, border: { dash: [4, 4] }, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { stepSize: 15, font: { family: "Outfit" } }, beginAtZero: true }
+                        x: { grid: { display: false }, ticks: { maxTicksLimit: 12, font: { family: "Outfit" } } },
+                        yClicks: { position: 'left', border: { dash: [4, 4] }, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { family: "Outfit" } }, beginAtZero: true },
+                        yDialogues: { position: 'right', border: { dash: [4, 4] }, grid: { drawOnChartArea: false }, ticks: { precision: 0, font: { family: "Outfit" } }, beginAtZero: true }
                     }
                 }
             });
@@ -949,6 +1167,230 @@
             barChartInst.data.datasets[0].data = barClicks;
             barChartInst.data.datasets[1].data = barDialogs;
             barChartInst.update();
+
+            renderActivityHeatmap();
+        }
+
+        function buildDailyActivity() {
+            const daily = new Map();
+
+            Object.keys(globalData.clicks).forEach(k => {
+                const dateStr = k.substring(0, 10);
+                const count = globalData.clicks[k];
+                if (!daily.has(dateStr)) daily.set(dateStr, { clicks: 0, dialogues: 0 });
+                daily.get(dateStr).clicks += count;
+            });
+
+            globalData.inputs.forEach(i => {
+                const dateStr = i.time.substring(0, 10);
+                if (!daily.has(dateStr)) daily.set(dateStr, { clicks: 0, dialogues: 0 });
+                daily.get(dateStr).dialogues++;
+            });
+
+            return daily;
+        }
+
+        function getHeatmapValue(dayData) {
+            if (!dayData) return 0;
+            if (currentHeatmapMode === 'clicks') return dayData.clicks;
+            if (currentHeatmapMode === 'dialogues') return dayData.dialogues;
+            return dayData.clicks + dayData.dialogues;
+        }
+
+        function getHeatmapYears(daily) {
+            const years = new Set();
+            daily.forEach((_, dateStr) => years.add(parseInt(dateStr.substring(0, 4))));
+            if (years.size === 0) years.add(new Date().getFullYear());
+            return Array.from(years).sort((a, b) => a - b);
+        }
+
+        function cycleHeatmapYear() {
+            const years = getHeatmapYears(buildDailyActivity());
+            if (years.length <= 1) return;
+
+            const currentIdx = years.indexOf(selectedHeatmapYear);
+            selectedHeatmapYear = years[(currentIdx + 1) % years.length];
+            renderActivityHeatmap();
+        }
+
+        function getHeatmapThresholds(daily) {
+            const values = [];
+            daily.forEach(dayData => {
+                const value = getHeatmapValue(dayData);
+                if (value > 0) values.push(value);
+            });
+
+            if (values.length === 0) return [];
+            values.sort((a, b) => a - b);
+            return [0.2, 0.4, 0.6, 0.8].map(p => values[Math.floor((values.length - 1) * p)]);
+        }
+
+        function getHeatmapLevel(value, thresholds) {
+            if (value <= 0) return 0;
+            let level = 1;
+            thresholds.forEach(t => {
+                if (value > t) level++;
+            });
+            return Math.min(level, 5);
+        }
+
+        function dateFromKey(dateStr) {
+            const year = parseInt(dateStr.substring(0, 4));
+            const month = parseInt(dateStr.substring(5, 7)) - 1;
+            const day = parseInt(dateStr.substring(8, 10));
+            return new Date(year, month, day);
+        }
+
+        function mondayIndex(date) {
+            return (date.getDay() + 6) % 7;
+        }
+
+        function heatmapWeekColumn(date, rangeStart) {
+            const dayIndex = Math.floor((date - rangeStart) / 86400000);
+            return Math.floor((dayIndex + mondayIndex(rangeStart)) / 7) + 1;
+        }
+
+        function heatmapQuarterRange(year, quarterIdx) {
+            const startMonth = quarterIdx * 3;
+            return {
+                start: new Date(year, startMonth, 1),
+                end: new Date(year, startMonth + 3, 0),
+                months: [startMonth, startMonth + 1, startMonth + 2]
+            };
+        }
+
+        function formatHeatmapDate(dateStr) {
+            const date = dateFromKey(dateStr);
+            return `${MONTH_NAMES[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+        }
+
+        function getHeatmapTooltip(dateStr, dayData) {
+            const dateLine = formatHeatmapDate(dateStr);
+            if (currentHeatmapMode === 'clicks') {
+                return `${dateLine}\nClicks: ${dayData.clicks}`;
+            }
+            if (currentHeatmapMode === 'dialogues') {
+                return `${dateLine}\nDialogues: ${dayData.dialogues}`;
+            }
+            return `${dateLine}\nClicks: ${dayData.clicks}\nDialogues: ${dayData.dialogues}`;
+        }
+
+        function getHeatmapTooltipEl() {
+            let tooltip = document.getElementById('heatmap-tooltip');
+            if (!tooltip) {
+                tooltip = document.createElement('div');
+                tooltip.id = 'heatmap-tooltip';
+                tooltip.className = 'heatmap-tooltip';
+                document.body.appendChild(tooltip);
+            }
+            return tooltip;
+        }
+
+        function moveHeatmapTooltip(event) {
+            const tooltip = getHeatmapTooltipEl();
+            tooltip.style.left = `${event.clientX + 12}px`;
+            tooltip.style.top = `${event.clientY + 12}px`;
+        }
+
+        function showHeatmapTooltip(event, text) {
+            const tooltip = getHeatmapTooltipEl();
+            tooltip.textContent = text;
+            moveHeatmapTooltip(event);
+            tooltip.classList.add('visible');
+        }
+
+        function hideHeatmapTooltip() {
+            const tooltip = getHeatmapTooltipEl();
+            tooltip.classList.remove('visible');
+        }
+
+        function renderActivityHeatmap() {
+            const container = document.getElementById('activity-heatmap');
+            if (!container) return;
+
+            const daily = buildDailyActivity();
+            const years = getHeatmapYears(daily);
+            if (!selectedHeatmapYear || !years.includes(selectedHeatmapYear)) {
+                selectedHeatmapYear = years[years.length - 1];
+            }
+
+            const thresholds = getHeatmapThresholds(daily);
+            const heatmapModeClass = currentHeatmapMode === 'clicks' ? ' click' :
+                currentHeatmapMode === 'dialogues' ? ' dialogue' : '';
+
+            container.innerHTML = '';
+
+            const yearEl = document.createElement('div');
+            yearEl.className = 'heatmap-year';
+
+            const yearBtn = document.createElement('button');
+            yearBtn.className = 'heatmap-year-btn';
+            yearBtn.textContent = selectedHeatmapYear;
+            yearBtn.disabled = years.length <= 1;
+            yearBtn.title = years.length > 1 ? 'Switch year' : `${selectedHeatmapYear}`;
+            yearBtn.addEventListener('click', cycleHeatmapYear);
+            yearEl.appendChild(yearBtn);
+
+            const bodyEl = document.createElement('div');
+            bodyEl.className = 'heatmap-body';
+
+            for (let quarterIdx = 0; quarterIdx < 4; quarterIdx++) {
+                const quarter = heatmapQuarterRange(selectedHeatmapYear, quarterIdx);
+                const columnCount = heatmapWeekColumn(quarter.end, quarter.start);
+
+                const quarterEl = document.createElement('div');
+                quarterEl.className = 'heatmap-quarter';
+
+                const monthsEl = document.createElement('div');
+                monthsEl.className = 'heatmap-months';
+                monthsEl.style.gridTemplateColumns = `repeat(${columnCount}, minmax(0, 1fr))`;
+
+                quarter.months.forEach(monthIdx => {
+                    const monthStart = new Date(selectedHeatmapYear, monthIdx, 1);
+                    const monthEnd = new Date(selectedHeatmapYear, monthIdx + 1, 0);
+                    const colStart = heatmapWeekColumn(monthStart, quarter.start);
+                    const colSpan = heatmapWeekColumn(monthEnd, quarter.start) - colStart + 1;
+
+                    const monthEl = document.createElement('div');
+                    monthEl.className = 'heatmap-month';
+                    monthEl.textContent = MONTH_NAMES[monthIdx].substring(0, 3);
+                    monthEl.style.gridColumn = `${colStart} / span ${colSpan}`;
+                    monthsEl.appendChild(monthEl);
+                });
+                quarterEl.appendChild(monthsEl);
+
+                const gridWrap = document.createElement('div');
+                gridWrap.className = 'heatmap-grid-wrap';
+
+                const gridEl = document.createElement('div');
+                gridEl.className = 'heatmap-grid';
+                gridEl.style.gridTemplateColumns = `repeat(${columnCount}, minmax(0, 1fr))`;
+
+                for (let d = new Date(quarter.start); d <= quarter.end; d.setDate(d.getDate() + 1)) {
+                    const dateStr = getLocalDateStr(d);
+                    const dayData = daily.get(dateStr) || { clicks: 0, dialogues: 0 };
+                    const value = getHeatmapValue(dayData);
+                    const level = getHeatmapLevel(value, thresholds);
+
+                    const cell = document.createElement('button');
+                    cell.className = `heatmap-cell level-${level}${heatmapModeClass}`;
+                    cell.style.gridColumn = heatmapWeekColumn(d, quarter.start);
+                    cell.style.gridRow = mondayIndex(d) + 1;
+                    const tooltipText = getHeatmapTooltip(dateStr, dayData);
+                    cell.setAttribute('aria-label', tooltipText.replace(/\n/g, ', '));
+                    cell.addEventListener('mouseenter', event => showHeatmapTooltip(event, tooltipText));
+                    cell.addEventListener('mousemove', moveHeatmapTooltip);
+                    cell.addEventListener('mouseleave', hideHeatmapTooltip);
+                    gridEl.appendChild(cell);
+                }
+
+                gridWrap.appendChild(gridEl);
+                quarterEl.appendChild(gridWrap);
+                bodyEl.appendChild(quarterEl);
+            }
+
+            yearEl.appendChild(bodyEl);
+            container.appendChild(yearEl);
         }
 
         // --- NOTEBOOK TAB ---
