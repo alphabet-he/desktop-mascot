@@ -77,6 +77,7 @@ function createWindow() {
   mainWin = new BrowserWindow({
     width: winWidth,
     height: winHeight,
+    ...(process.platform === 'darwin' ? { type: 'panel' } : {}),
     frame: false,
     transparent: true,
     alwaysOnTop: true,
@@ -91,7 +92,7 @@ function createWindow() {
   });
 
   if (process.platform === 'darwin') {
-    mainWin.setAlwaysOnTop(true, 'floating');
+    mainWin.setAlwaysOnTop(true, 'screen-saver');
     mainWin.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   } else {
     mainWin.setAlwaysOnTop(true, 'screen-saver');
